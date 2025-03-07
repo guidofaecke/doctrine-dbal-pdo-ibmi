@@ -78,8 +78,8 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
             case 'decimal':
             case 'double':
             case 'real':
-                $scale     = $tableColumn['scale'];
-                $precision = $tableColumn['length'];
+                $scale     = (int) $tableColumn['scale'];
+                $precision = (int) $tableColumn['length'];
                 break;
         }
 
@@ -97,7 +97,7 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
             $options['comment'] = $tableColumn['comment'];
         }
 
-        if ($scale !== null && $precision !== null) {
+        if ($precision !== null) {
             $options['scale']     = $scale;
             $options['precision'] = $precision;
         }
@@ -201,8 +201,7 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
         $sql = <<<'SQL'
 SELECT NAME
 FROM QSYS2.SYSTABLES
-WHERE TYPE = 'T'
-  AND CREATOR = ?
+WHERE TYPE IN ('T', 'P')
 SQL;
 
         return $this->connection->executeQuery($sql, [$databaseName]);
@@ -239,8 +238,8 @@ SQL;
                   AND D.COLUMN_NAME = C.COLUMN_NAME
 SQL;
 
-        $conditions = ['C.TABLE_SCHEMA = ?', "T.TABLE_TYPE = 'BASE TABLE'"];
-        $params     = [$databaseName];
+        $conditions = ["T.TABLE_TYPE = 'BASE TABLE'"];
+        $params     = [];
 
         if ($tableName !== null) {
             $conditions[] = 'C.TABLE_NAME = ?';
