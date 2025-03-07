@@ -74,6 +74,10 @@ class Driver extends AbstractIBMIDB2PDODriver
             $dsn .= 'DATABASE=' . $params['dbname'] . ';';
         }
 
+        if (isset($params['dbq'])) {
+            $dsn .= 'DBQ=' . $params['dbq'] . ';';
+        }
+
         if (isset($params['charset'])) {
             $dsn .= 'charset=' . $params['charset'] . ';';
         }
