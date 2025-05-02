@@ -54,6 +54,9 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
         $type = $this->platform->getDoctrineTypeMapping($tableColumn['typename']);
 
         switch (strtolower($tableColumn['typename'])) {
+            case 'character varying':
+            case 'datalink':
+            case 'national character varying':
             case 'varchar':
                 if ($tableColumn['codepage'] === 0) {
                     $type = Types::BINARY;
@@ -62,7 +65,14 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
                 $length = $tableColumn['length'];
                 break;
 
+            case 'binary':
+                $type   = Types::BINARY;
+                $length = $tableColumn['length'];
+                break;
+
             case 'character':
+            case 'graphic':
+            case 'national character':
                 if ($tableColumn['codepage'] === 0) {
                     $type = Types::BINARY;
                 }
@@ -71,12 +81,16 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
                 $fixed  = true;
                 break;
 
+            case 'character large object':
             case 'clob':
+            case 'national character large object':
                 $length = $tableColumn['length'];
                 break;
 
             case 'decimal':
             case 'double':
+            case 'double precision':
+            case 'numeric':
             case 'real':
                 $scale     = (int) $tableColumn['scale'];
                 $precision = (int) $tableColumn['length'];
@@ -89,7 +103,7 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
             'fixed'           => $fixed,
             'default'         => $default,
             'autoincrement'   => (bool) $tableColumn['autoincrement'],
-            'notnull'         => $tableColumn['nulls'] === 0,
+            'notnull'         => $tableColumn['nulls'] === '0',
             'platformOptions' => [],
         ];
 
@@ -219,7 +233,8 @@ SQL;
        C.COLUMN_NAME,
        C.DATA_TYPE AS TYPENAME,
        C.CHARACTER_SET_NAME AS CODEPAGE,
-       D.NULLABLE AS NULLS,
+--        D.NULLABLE AS NULLS,
+       D.NULLABLE AS nulls,
        D.COLUMN_SIZE AS LENGTH,
        C.NUMERIC_SCALE AS SCALE,
        D.COLUMN_TEXT AS COMMENT,
@@ -253,13 +268,52 @@ SQL;
 
     protected function selectIndexColumns(string $databaseName, ?string $tableName = null): Result
     {
-        $sql = 'SELECT';
+        $sql1 = 'SELECT';
 
         if ($tableName === null) {
-            $sql .= ' IDX.TABLE_NAME AS NAME,';
+            $sql1 .= ' T.TABLE_NAME AS NAME,';
         }
 
-        $sql .= <<<'SQL'
+        $sql1 .= <<<'SQL'
+             CSTCOL.CONSTRAINT_NAME AS KEY_NAME,
+             CSTCOL.COLUMN_NAME AS COLUMN_NAME,
+             CASE 
+                 WHEN CST.CONSTRAINT_TYPE = 'PRIMARY KEY' 
+                     THEN 1 
+                     ELSE 0 
+                 END AS PRIMARY,
+             CASE 
+                 WHEN (CST.CONSTRAINT_TYPE = 'UNIQUE' OR CST.CONSTRAINT_TYPE = 'PRIMARY KEY') 
+                     THEN 0 
+                     ELSE 1 
+                 END AS NON_UNIQUE,
+             ORDINAL_POSITION AS COLPOS
+        FROM QSYS2.SYSCST AS CST
+        JOIN QSYS2.SYSTABLES AS T
+          ON CST.TABLE_SCHEMA = T.TABLE_SCHEMA AND CST.TABLE_NAME = T.TABLE_NAME
+        JOIN QSYS2.SYSCSTCOL AS CSTCOL
+          ON CST.CONSTRAINT_SCHEMA = CSTCOL.CONSTRAINT_SCHEMA AND CST.CONSTRAINT_NAME = CSTCOL.CONSTRAINT_NAME
+        JOIN SYSIBM.COLUMNS AS C
+          ON C.TABLE_NAME = T.TABLE_NAME AND C.COLUMN_NAME = CSTCOL.COLUMN_NAME
+SQL;
+
+        $conditions = ['T.TABLE_SCHEMA = ?', "T.TABLE_TYPE = 'T'"];
+        $params     = [$databaseName];
+
+        if ($tableName !== null) {
+            $conditions[] = 'T.TABLE_NAME = ?';
+            $params[]     = $tableName;
+        }
+
+        $sql1 .= ' WHERE ' . implode(' AND ', $conditions);
+
+        $sql2 = 'SELECT';
+
+        if ($tableName === null) {
+            $sql2 .= ' IDX.TABLE_NAME AS NAME,';
+        }
+
+        $sql2 .= <<<'SQL'
              IDX.INDEX_NAME AS KEY_NAME,
              IDXCOL.COLUMN_NAME AS COLUMN_NAME,
              CASE
@@ -269,7 +323,8 @@ SQL;
              CASE
                  WHEN IDX.IS_UNIQUE = 'D' THEN 1
                  ELSE 0
-             END AS NON_UNIQUE
+             END AS NON_UNIQUE,
+             COLUMN_POSITION AS COLPOS
         FROM QSYS2.SYSindexes AS IDX
         JOIN QSYS2.SYSTABLES AS T
           ON IDX.TABLE_SCHEMA = T.TABLE_SCHEMA AND IDX.TABLE_NAME = T.TABLE_NAME
@@ -278,14 +333,32 @@ SQL;
 SQL;
 
         $conditions = ['IDX.TABLE_SCHEMA = ?', "T.TABLE_TYPE = 'T'"];
-        $params     = [$databaseName];
+        $params[]   = $databaseName;
 
         if ($tableName !== null) {
             $conditions[] = 'IDX.TABLE_NAME = ?';
             $params[]     = $tableName;
         }
 
-        $sql .= ' WHERE ' . implode(' AND ', $conditions) . ' ORDER BY IDX.INDEX_NAME, IDXCOL.COLUMN_POSITION';
+        $sql2 .= ' WHERE ' . implode(' AND ', $conditions);
+
+        $sql = 'SELECT';
+
+        if ($tableName === null) {
+            $sql .= '    NAME,';
+        }
+
+        $sql .= <<<'SQL'
+    KEY_NAME,
+    COLUMN_NAME,
+    PRIMARY,
+    NON_UNIQUE
+FROM (
+SQL;
+        $sql .= $sql1;
+        $sql .= ' UNION ALL ';
+        $sql .= $sql2;
+        $sql .= ') AS all_data ORDER BY KEY_NAME, COLPOS';
 
         return $this->connection->executeQuery($sql, $params);
     }
@@ -336,7 +409,7 @@ SQL;
         $params     = [$databaseName];
 
         if ($tableName !== null) {
-            $conditions[] = 'R.TABNAME = ?';
+            $conditions[] = 'R.TABLE_NAME = ?';
             $params[]     = $tableName;
         }
 
