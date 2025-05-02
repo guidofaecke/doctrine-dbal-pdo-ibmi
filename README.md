@@ -42,3 +42,7 @@ return [
         ],
     ],
 ];
+```
+## Caution
+Even if doctrine migration is working, be warned that system default libraries/schemas are included.
+Be aware that migration files will include a fair amount of DROP statements from these schemas.

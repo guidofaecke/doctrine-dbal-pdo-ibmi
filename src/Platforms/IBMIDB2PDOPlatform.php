@@ -28,7 +28,6 @@ use function explode;
 use function implode;
 use function sprintf;
 use function str_contains;
-use function strlen;
 
 class IBMIDB2PDOPlatform extends AbstractPlatform
 {
@@ -47,22 +46,32 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     public function initializeDoctrineTypeMappings(): void
     {
         $this->doctrineTypeMapping = [
-            'bigint'    => Types::BIGINT,
-            'binary'    => Types::BINARY,
-            'blob'      => Types::BLOB,
-            'character' => Types::STRING,
-            'character varying' => Types::STRING,
-            'clob'      => Types::TEXT,
-            'date'      => Types::DATE_MUTABLE,
-            'decimal'   => Types::DECIMAL,
-            'double'    => Types::FLOAT,
-            'integer'   => Types::INTEGER,
-            'real'      => Types::SMALLFLOAT,
-            'smallint'  => Types::SMALLINT,
-            'time'      => Types::TIME_MUTABLE,
-            'timestamp' => Types::DATETIME_MUTABLE,
-            'varbinary' => Types::BINARY,
-            'varchar'   => Types::STRING,
+            'bigint'                          => Types::BIGINT,
+            'binary'                          => Types::BINARY,
+            'binary large object'             => Types::BLOB,
+            'binary varying'                  => Types::BLOB,
+            'blob'                            => Types::BLOB,
+            'character'                       => Types::STRING,
+            'character large object'          => Types::TEXT,
+            'character varying'               => Types::STRING,
+            'clob'                            => Types::TEXT,
+            'datalink'                        => Types::STRING,
+            'date'                            => Types::DATE_MUTABLE,
+            'decimal'                         => Types::DECIMAL,
+            'double'                          => Types::FLOAT,
+            'double precision'                => Types::FLOAT,
+            'graphic'                         => Types::STRING,
+            'integer'                         => Types::INTEGER,
+            'national character'              => Types::STRING,
+            'national character large object' => Types::TEXT,
+            'national character varying'      => Types::STRING,
+            'numeric'                         => Types::DECIMAL,
+            'real'                            => Types::SMALLFLOAT,
+            'smallint'                        => Types::SMALLINT,
+            'time'                            => Types::TIME_MUTABLE,
+            'timestamp'                       => Types::DATETIME_MUTABLE,
+            'varbinary'                       => Types::BINARY,
+            'varchar'                         => Types::STRING,
         ];
     }
 
@@ -215,7 +224,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /** @internal The method should be only used from within the {@see AbstractPlatform} class hierarchy. */
     public function supportsCommentOnStatement(): bool
     {
-        return true;
+        return false;
     }
 
     public function getCurrentDateSQL(): string
@@ -327,13 +336,6 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
 
         if (count($queryParts) > 0) {
             $sql[] = 'ALTER TABLE ' . $tableNameSQL . ' ' . implode(' ', $queryParts);
-        }
-
-        // Some table alteration operations require a table reorganization.
-        if ($needsReorg) {
-            $commandLength = 12 + strlen($tableNameSQL) + 1;
-
-            $sql[] = "CALL QSYS2.QCMDEXC('RGZPFM FILE(" . $tableNameSQL . ")', " . $commandLength . ')';
         }
 
         return array_merge(
