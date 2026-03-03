@@ -31,6 +31,11 @@ use function str_contains;
 
 class IBMIDB2PDOPlatform extends AbstractPlatform
 {
+    public function __construct()
+    {
+        parent::__construct(UnquotedIdentifierFolding::NONE);
+    }
+
     /**
      * {@inheritDoc}
      */
