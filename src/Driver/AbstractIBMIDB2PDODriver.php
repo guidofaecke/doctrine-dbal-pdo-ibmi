@@ -13,11 +13,13 @@ use Doctrine\DBAL\ServerVersionProvider;
 
 abstract class AbstractIBMIDB2PDODriver implements Driver
 {
+    #[\Override]
     public function getDatabasePlatform(ServerVersionProvider $versionProvider): AbstractPlatform
     {
         return new IBMIDB2PDOPlatform();
     }
 
+    #[\Override]
     public function getExceptionConverter(): ExceptionConverterInterface
     {
         return new ExceptionConverter();

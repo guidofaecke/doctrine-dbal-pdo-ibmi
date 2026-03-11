@@ -9,11 +9,12 @@ use Doctrine\DBAL\Platforms\Keywords\KeywordList;
 /**
  * DB2 Keywords.
  */
-class IBMIDB2PDOKeywords extends KeywordList
+final class IBMIDB2PDOKeywords extends KeywordList
 {
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     protected function getKeywords(): array
     {
         return [

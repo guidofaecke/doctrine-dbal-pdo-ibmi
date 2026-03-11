@@ -1,4 +1,4 @@
-name: Psalm
+name: Rector
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
   pull_request:
 
 jobs:
-  psalm:
-    name: Psalm Static Analysis
+  rector:
+    name: Rector Code Refactoring
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -26,5 +26,5 @@ jobs:
       - name: Install dependencies
         run: composer install --no-progress --no-suggest
 
-      - name: Run Psalm
-        run: vendor/bin/psalm
+      - name: Run Rector
+        run: vendor/bin/rector process --dry-run

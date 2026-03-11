@@ -14,6 +14,7 @@ use Doctrine\DBAL\Platforms\Keywords\KeywordList;
 use Doctrine\DBAL\Schema\ColumnDiff;
 use Doctrine\DBAL\Schema\Identifier;
 use Doctrine\DBAL\Schema\Index;
+use Doctrine\DBAL\Schema\Name\UnquotedIdentifierFolding;
 use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\DBAL\SQL\Builder\DefaultSelectSQLBuilder;
 use Doctrine\DBAL\SQL\Builder\SelectSQLBuilder;
@@ -29,7 +30,7 @@ use function implode;
 use function sprintf;
 use function str_contains;
 
-class IBMIDB2PDOPlatform extends AbstractPlatform
+final class IBMIDB2PDOPlatform extends AbstractPlatform
 {
     public function __construct()
     {
@@ -39,6 +40,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getBlobTypeDeclarationSQL(array $column): string
     {
         // todo blob(n) with $column['length'];
@@ -48,6 +50,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function initializeDoctrineTypeMappings(): void
     {
         $this->doctrineTypeMapping = [
@@ -80,11 +83,13 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
         ];
     }
 
+    #[\Override]
     protected function getBinaryTypeDeclarationSQLSnippet(?int $length): string
     {
         return $this->getCharTypeDeclarationSQLSnippet($length) . ' FOR BIT DATA';
     }
 
+    #[\Override]
     protected function getVarbinaryTypeDeclarationSQLSnippet(?int $length): string
     {
         return $this->getVarcharTypeDeclarationSQLSnippet($length) . ' FOR BIT DATA';
@@ -93,6 +98,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getClobTypeDeclarationSQL(array $column): string
     {
         // todo clob(n) with $column['length'];
@@ -102,6 +108,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getBooleanTypeDeclarationSQL(array $column): string
     {
         return 'SMALLINT';
@@ -110,6 +117,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getIntegerTypeDeclarationSQL(array $column): string
     {
         return 'INTEGER' . $this->_getCommonIntegerTypeDeclarationSQL($column);
@@ -118,6 +126,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getBigIntTypeDeclarationSQL(array $column): string
     {
         return 'BIGINT' . $this->_getCommonIntegerTypeDeclarationSQL($column);
@@ -126,6 +135,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getSmallIntTypeDeclarationSQL(array $column): string
     {
         return 'SMALLINT' . $this->_getCommonIntegerTypeDeclarationSQL($column);
@@ -134,6 +144,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     protected function _getCommonIntegerTypeDeclarationSQL(array $column): string
     {
         $autoinc = '';
@@ -144,16 +155,19 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
         return $autoinc;
     }
 
+    #[\Override]
     public function getBitAndComparisonExpression(string $value1, string $value2): string
     {
         return 'BITAND(' . $value1 . ', ' . $value2 . ')';
     }
 
+    #[\Override]
     public function getBitOrComparisonExpression(string $value1, string $value2): string
     {
         return 'BITOR(' . $value1 . ', ' . $value2 . ')';
     }
 
+    #[\Override]
     protected function getDateArithmeticIntervalExpression(
         string $date,
         string $operator,
@@ -175,6 +189,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
         return $date . ' ' . $operator . ' ' . $interval . ' ' . $unit->value;
     }
 
+    #[\Override]
     public function getDateDiffExpression(string $date1, string $date2): string
     {
         return 'DAYS(' . $date1 . ') - DAYS(' . $date2 . ')';
@@ -183,6 +198,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getDateTimeTypeDeclarationSQL(array $column): string
     {
         if (isset($column['version']) && $column['version'] === true) {
@@ -195,6 +211,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getDateTypeDeclarationSQL(array $column): string
     {
         return 'DATE';
@@ -203,11 +220,13 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getTimeTypeDeclarationSQL(array $column): string
     {
         return 'TIME';
     }
 
+    #[\Override]
     public function getTruncateTableSQL(string $tableName, bool $cascade = false): string
     {
         $tableIdentifier = new Identifier($tableName);
@@ -215,39 +234,46 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
         return 'TRUNCATE ' . $tableIdentifier->getQuotedName($this) . ' IMMEDIATE';
     }
 
+    #[\Override]
     public function getSetTransactionIsolationSQL(TransactionIsolationLevel $level): string
     {
         throw NotSupported::new(__METHOD__);
     }
 
     /** @internal The method should be only used from within the {@see AbstractSchemaManager} class hierarchy. */
+    #[\Override]
     public function getListViewsSQL(string $database): string
     {
         return 'SELECT NAME, TEXT FROM QSYS2.SYSVIEWS';
     }
 
     /** @internal The method should be only used from within the {@see AbstractPlatform} class hierarchy. */
+    #[\Override]
     public function supportsCommentOnStatement(): bool
     {
         return false;
     }
 
+    #[\Override]
     public function getCurrentDateSQL(): string
     {
         return 'CURRENT DATE';
     }
 
+    #[\Override]
     public function getCurrentTimeSQL(): string
     {
         return 'CURRENT TIME';
     }
 
+    #[\Override]
     public function getCurrentTimestampSQL(): string
     {
         return 'CURRENT TIMESTAMP';
     }
 
     /** @internal The method should be only used from within the {@see AbstractPlatform} class hierarchy. */
+    #[\Override]
     public function getIndexDeclarationSQL(Index $index): string
     {
         // Index declaration in statements like CREATE TABLE is not supported.
@@ -257,6 +283,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     protected function _getCreateTableSQL(string $name, array $columns, array $options = []): array
     {
         $indexes = [];
@@ -278,6 +305,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function getAlterTableSQL(TableDiff $diff): array
     {
         $sql         = [];
@@ -351,6 +379,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
         );
     }
 
+    #[\Override]
     public function getRenameTableSQL(string $oldName, string $newName): string
     {
         return sprintf('RENAME TABLE %s TO %s', $oldName, $newName);
@@ -456,6 +485,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     protected function getPreAlterTableIndexForeignKeySQL(TableDiff $diff): array
     {
         $sql = [];
@@ -491,6 +521,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     protected function getRenameIndexSQL(string $oldIndexName, Index $index, string $tableName): array
     {
         if (str_contains($tableName, '.')) {
@@ -506,36 +537,39 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
      *
      * @internal The method should be only used from within the {@see AbstractPlatform} class hierarchy.
      */
+    #[\Override]
     public function getDefaultValueDeclarationSQL(array $column): string
     {
         if (isset($column['autoincrement']) && $column['autoincrement'] === true) {
             return '';
         }
 
-        if (isset($column['version']) && $column['version'] === true) {
-            if ($column['type'] instanceof DateTimeType) {
-                $column['default'] = '1';
-            }
+        if (isset($column['version']) && $column['version'] === true && $column['type'] instanceof DateTimeType) {
+            $column['default'] = '1';
         }
 
         return parent::getDefaultValueDeclarationSQL($column);
     }
 
+    #[\Override]
     public function getEmptyIdentityInsertSQL(string $quotedTableName, string $quotedIdentifierColumnName): string
     {
         return 'INSERT INTO ' . $quotedTableName . ' (' . $quotedIdentifierColumnName . ') VALUES (DEFAULT)';
     }
 
+    #[\Override]
     public function getCreateTemporaryTableSnippetSQL(): string
     {
         return 'DECLARE GLOBAL TEMPORARY TABLE';
     }
 
+    #[\Override]
     public function getTemporaryTableName(string $tableName): string
     {
         return 'SESSION.' . $tableName;
     }
 
+    #[\Override]
     protected function doModifyLimitQuery(string $query, ?int $limit, int $offset): string
     {
         if ($offset > 0) {
@@ -549,6 +583,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
         return $query;
     }
 
+    #[\Override]
     public function getLocateExpression(string $string, string $substring, ?string $start = null): string
     {
         if ($start === null) {
@@ -558,6 +593,7 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
         return sprintf('LOCATE(%s, %s, %s)', $substring, $string, $start);
     }
 
+    #[\Override]
     public function getSubstringExpression(string $string, string $start, ?string $length = null): string
     {
         if ($length === null) {
@@ -567,26 +603,31 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
         return sprintf('SUBSTR(%s, %s, %s)', $string, $start, $length);
     }
 
+    #[\Override]
     public function getLengthExpression(string $string): string
     {
         return 'LENGTH(' . $string . ', CODEUNITS32)';
     }
 
+    #[\Override]
     public function getCurrentDatabaseExpression(): string
     {
         return 'CURRENT_USER';
     }
 
+    #[\Override]
     public function supportsIdentityColumns(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function createSelectSQLBuilder(): SelectSQLBuilder
     {
         return new DefaultSelectSQLBuilder($this, 'WITH RR USE AND KEEP UPDATE LOCKS', null);
     }
 
+    #[\Override]
     public function getDummySelectSQL(string $expression = '1'): string
     {
         return sprintf('SELECT %s FROM sysibm.sysdummy1', $expression);
@@ -599,16 +640,19 @@ class IBMIDB2PDOPlatform extends AbstractPlatform
      *
      * TODO: We have to investigate how to get DB2 up and running with savepoints.
      */
+    #[\Override]
     public function supportsSavepoints(): bool
     {
         return false;
     }
 
+    #[\Override]
     protected function createReservedKeywordsList(): KeywordList
     {
         return new IBMIDB2PDOKeywords();
     }
 
+    #[\Override]
     public function createSchemaManager(Connection $connection): IBMIDB2PDOSchemaManager
     {
         return new IBMIDB2PDOSchemaManager($connection, $this);
