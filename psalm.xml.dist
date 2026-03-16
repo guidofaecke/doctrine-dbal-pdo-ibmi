@@ -16,11 +16,6 @@
     </projectFiles>
 
     <issueHandlers>
-        <PossiblyUnusedMethod>
-            <errorLevel type="suppress">
-                <directory name="src/Driver" />
-            </errorLevel>
-        </PossiblyUnusedMethod>
         <InvalidReturnType>
             <errorLevel type="suppress">
                 <file name="src/Driver/Connection.php" />
@@ -46,5 +41,17 @@
                 <file name="src/Driver/Result.php" />
             </errorLevel>
         </LessSpecificReturnStatement>
+        <DeprecatedMethod>
+            <errorLevel type="suppress">
+                <file name="src/Schema/IBMIDB2PDOSchemaManager.php" />
+                <file name="src/Platforms/IBMIDB2PDOPlatform.php" />
+            </errorLevel>
+        </DeprecatedMethod>
+        <DeprecatedClass>
+            <errorLevel type="suppress">
+                <file name="src/Platforms/Keywords/IBMIDB2PDOKeywords.php" />
+                <file name="src/Platforms/IBMIDB2PDOPlatform.php" />
+            </errorLevel>
+        </DeprecatedClass>
     </issueHandlers>
 </psalm>

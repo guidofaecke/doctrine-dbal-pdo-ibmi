@@ -12,13 +12,14 @@ use SensitiveParameter;
 
 use function is_string;
 
-class Driver extends AbstractIBMIDB2PDODriver
+final class Driver extends AbstractIBMIDB2PDODriver
 {
     use PDOConnect;
 
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function connect(
         #[SensitiveParameter]
         array $params,

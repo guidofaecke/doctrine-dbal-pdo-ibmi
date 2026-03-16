@@ -11,23 +11,26 @@ use PDOException;
 use PDOStatement;
 use ValueError;
 
-final class Result implements ResultInterface
+final readonly class Result implements ResultInterface
 {
     /** @internal The result can be only instantiated by its driver connection or statement. */
-    public function __construct(private readonly PDOStatement $statement)
+    public function __construct(private PDOStatement $statement)
     {
     }
 
+    #[\Override]
     public function fetchNumeric(): array|false
     {
         return $this->fetch(PDO::FETCH_NUM);
     }
 
+    #[\Override]
     public function fetchAssociative(): array|false
     {
         return $this->fetch(PDO::FETCH_ASSOC);
     }
 
+    #[\Override]
     public function fetchOne(): mixed
     {
         return $this->fetch(PDO::FETCH_COLUMN);
@@ -36,6 +39,7 @@ final class Result implements ResultInterface
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function fetchAllNumeric(): array
     {
         return $this->fetchAll(PDO::FETCH_NUM);
@@ -44,6 +48,7 @@ final class Result implements ResultInterface
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function fetchAllAssociative(): array
     {
         return $this->fetchAll(PDO::FETCH_ASSOC);
@@ -52,11 +57,13 @@ final class Result implements ResultInterface
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function fetchFirstColumn(): array
     {
         return $this->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    #[\Override]
     public function rowCount(): int
     {
         try {
@@ -66,6 +73,7 @@ final class Result implements ResultInterface
         }
     }
 
+    #[\Override]
     public function columnCount(): int
     {
         try {
@@ -92,6 +100,7 @@ final class Result implements ResultInterface
         return $meta['name'];
     }
 
+    #[\Override]
     public function free(): void
     {
         $this->statement->closeCursor();

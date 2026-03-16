@@ -30,11 +30,12 @@ use const CASE_LOWER;
  *
  * @extends AbstractSchemaManager<IBMIDB2PDOPlatform>
  */
-class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
+final class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
 {
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     protected function _getPortableTableColumnDefinition($tableColumn): Column
     {
         $tableColumn = array_change_key_case($tableColumn, CASE_LOWER);
@@ -46,14 +47,14 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
         if ($tableColumn['default'] !== null && $tableColumn['default'] !== 'NULL') {
             $default = $tableColumn['default'];
 
-            if (preg_match('/^\'(.*)\'$/s', $default, $matches) === 1) {
+            if (preg_match('/^\'(.*)\'$/s', (string) $default, $matches) === 1) {
                 $default = str_replace("''", "'", $matches[1]);
             }
         }
 
         $type = $this->platform->getDoctrineTypeMapping($tableColumn['typename']);
 
-        switch (strtolower($tableColumn['typename'])) {
+        switch (strtolower((string) $tableColumn['typename'])) {
             case 'character varying':
             case 'datalink':
             case 'national character varying':
@@ -122,6 +123,7 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     protected function _getPortableTableDefinition(array $table): string
     {
         $table = array_change_key_case($table, CASE_LOWER);
@@ -132,19 +134,21 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
     /**
      * {@inheritDoc}
      */
-    protected function _getPortableTableIndexesList(array $tableIndexes, string $tableName): array
+    #[\Override]
+    protected function _getPortableTableIndexesList(array $rows, string $tableName): array
     {
-        foreach ($tableIndexes as &$tableIndexRow) {
-            $tableIndexRow            = array_change_key_case($tableIndexRow, CASE_LOWER);
+        foreach ($rows as &$tableIndexRow) {
+            $tableIndexRow            = array_change_key_case($tableIndexRow);
             $tableIndexRow['primary'] = (bool) $tableIndexRow['primary'];
         }
 
-        return parent::_getPortableTableIndexesList($tableIndexes, $tableName);
+        return parent::_getPortableTableIndexesList($rows, $tableName);
     }
 
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     protected function _getPortableTableForeignKeyDefinition(array $tableForeignKey): ForeignKeyConstraint
     {
         return new ForeignKeyConstraint(
@@ -159,12 +163,13 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
     /**
      * {@inheritDoc}
      */
-    protected function _getPortableTableForeignKeysList(array $tableForeignKeys): array
+    #[\Override]
+    protected function _getPortableTableForeignKeysList(array $rows): array
     {
         $foreignKeys = [];
 
-        foreach ($tableForeignKeys as $tableForeignKey) {
-            $tableForeignKey = array_change_key_case($tableForeignKey, CASE_LOWER);
+        foreach ($rows as $tableForeignKey) {
+            $tableForeignKey = array_change_key_case($tableForeignKey);
 
             if (! isset($foreignKeys[$tableForeignKey['index_name']])) {
                 $foreignKeys[$tableForeignKey['index_name']] = [
@@ -189,20 +194,22 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     protected function _getPortableViewDefinition(array $view): View
     {
         $view = array_change_key_case($view, CASE_LOWER);
 
         $sql = '';
-        $pos = strpos($view['text'], ' AS ');
+        $pos = strpos((string) $view['text'], ' AS ');
 
         if ($pos !== false) {
-            $sql = substr($view['text'], $pos + 4);
+            $sql = substr((string) $view['text'], $pos + 4);
         }
 
         return new View($view['name'], $sql);
     }
 
+    #[\Override]
     protected function normalizeName(string $name): string
     {
         $identifier = new Identifier($name);
@@ -210,6 +217,7 @@ class IBMIDB2PDOSchemaManager extends AbstractSchemaManager
         return $identifier->isQuoted() ? $identifier->getName() : strtoupper($name);
     }
 
+    #[\Override]
     protected function selectTableNames(string $databaseName): Result
     {
         $sql = <<<'SQL'
@@ -221,6 +229,7 @@ SQL;
         return $this->connection->executeQuery($sql, [$databaseName]);
     }
 
+    #[\Override]
     protected function selectTableColumns(string $databaseName, ?string $tableName = null): Result
     {
         $sql = 'SELECT';
@@ -229,7 +238,7 @@ SQL;
             $sql .= ' C.TABLE_NAME AS NAME,';
         }
 
-        $sql .= <<<'SQL'
+        $sql .= <<<'SQL_WRAP'
        C.COLUMN_NAME,
        C.DATA_TYPE AS TYPENAME,
        C.CHARACTER_SET_NAME AS CODEPAGE,
@@ -251,7 +260,7 @@ SQL;
               ON D.TABLE_SCHEM = C.TABLE_SCHEMA
                   AND D.TABLE_NAME = C.TABLE_NAME
                   AND D.COLUMN_NAME = C.COLUMN_NAME
-SQL;
+SQL_WRAP;
 
         $conditions = ["T.TABLE_TYPE = 'BASE TABLE'"];
         $params     = [];
@@ -266,6 +275,7 @@ SQL;
         return $this->connection->executeQuery($sql, $params);
     }
 
+    #[\Override]
     protected function selectIndexColumns(string $databaseName, ?string $tableName = null): Result
     {
         $sql1 = 'SELECT';
@@ -363,6 +373,7 @@ SQL;
         return $this->connection->executeQuery($sql, $params);
     }
 
+    #[\Override]
     protected function selectForeignKeyColumns(string $databaseName, ?string $tableName = null): Result
     {
         $sql = 'SELECT';
@@ -420,7 +431,10 @@ SQL;
 
     /**
      * {@inheritDoc}
+     *
+     * @return array<non-empty-string, array{comment: mixed}>
      */
+    #[\Override]
     protected function fetchTableOptionsByTable(string $databaseName, ?string $tableName = null): array
     {
         $sql = 'SELECT NAME, REMARKS';
@@ -439,7 +453,7 @@ SQL;
             $sql .= ' WHERE ' . implode(' AND ', $conditions);
         }
 
-        /** @var array<string,array<string,mixed>> $metadata */
+        /** @var array<non-empty-string, array<string, mixed>> $metadata */
         $metadata = $this->connection->executeQuery($sql, $params)
             ->fetchAllAssociativeIndexed();
 

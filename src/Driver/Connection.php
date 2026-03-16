@@ -13,19 +13,21 @@ use PDOStatement;
 
 use function assert;
 
-final class Connection implements ConnectionInterface
+final readonly class Connection implements ConnectionInterface
 {
     /** @internal The connection can be only instantiated by its driver. */
-    public function __construct(private readonly PDO $connection)
+    public function __construct(private PDO $connection)
     {
         $connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
+    #[\Override]
     public function getServerVersion(): string
     {
         return $this->connection->getAttribute(PDO::ATTR_SERVER_VERSION);
     }
 
+    #[\Override]
     public function prepare(string $sql): Statement
     {
         try {
@@ -38,6 +40,7 @@ final class Connection implements ConnectionInterface
         }
     }
 
+    #[\Override]
     public function query(string $sql): Result
     {
         try {
@@ -50,11 +53,13 @@ final class Connection implements ConnectionInterface
         }
     }
 
+    #[\Override]
     public function quote(string $value): string
     {
         return $this->connection->quote($value);
     }
 
+    #[\Override]
     public function exec(string $sql): int|string
     {
         try {
@@ -68,6 +73,7 @@ final class Connection implements ConnectionInterface
         }
     }
 
+    #[\Override]
     public function lastInsertId(): string
     {
         try {
@@ -99,6 +105,7 @@ final class Connection implements ConnectionInterface
         return $value;
     }
 
+    #[\Override]
     public function beginTransaction(): void
     {
         try {
@@ -108,6 +115,7 @@ final class Connection implements ConnectionInterface
         }
     }
 
+    #[\Override]
     public function commit(): void
     {
         try {
@@ -117,6 +125,7 @@ final class Connection implements ConnectionInterface
         }
     }
 
+    #[\Override]
     public function rollBack(): void
     {
         try {
@@ -126,6 +135,7 @@ final class Connection implements ConnectionInterface
         }
     }
 
+    #[\Override]
     public function getNativeConnection(): PDO
     {
         return $this->connection;
